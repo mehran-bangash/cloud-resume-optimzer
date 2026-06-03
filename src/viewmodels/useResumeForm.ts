@@ -18,6 +18,7 @@ export function useResumeForm() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
+  const [generatedHtml, setGeneratedHtml] = useState<string | null>(null); // Added this missing line!
 
   // Updates any top-level simple text fields (like fullName, title, email, aboutMe)
   const updateField = (field: keyof ResumeModel, value: any) => {
@@ -73,21 +74,43 @@ export function useResumeForm() {
     });
   };
 
-  // Triggered when clicking "Deploy Portfolio to CDN" (currently simulated)
+  // Submits form data to your live Cloudflare AI Backend
   const generatePortfolio = async () => {
     setIsGenerating(true);
-    
-    // Simulate API request delay
-    setTimeout(() => {
+    setLiveUrl(null);
+    setGeneratedHtml(null);
+    try {
+      // Calling your live Cloudflare Worker
+      const response = await fetch("https://backend-api.221029.workers.dev", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(resume),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to optimize portfolio via AI backend.");
+      }
+
+      const data = await response.json();
+      
+      // The Cloudflare AI returns the optimized fields wrapped inside data.optimized
+      console.log("AI Optimized Output:", data.optimized);
+      
+      setLiveUrl(`https://cloud-resume-optimzer.vercel.app/preview/${resume.fullName.toLowerCase().replace(/\s+/g, '-')}`);
+    } catch (error) {
+      console.error("Error generating portfolio:", error);
+    } finally {
       setIsGenerating(false);
-      setLiveUrl("https://example.com/your-portfolio-preview");
-    }, 2000);
+    }
   };
 
   return {
     resume,
     isGenerating,
     liveUrl,
+    generatedHtml,
     updateField,
     addProject,
     updateProject,
