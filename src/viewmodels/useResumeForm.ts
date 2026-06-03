@@ -20,7 +20,6 @@ export function useResumeForm() {
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
   const [generatedHtml, setGeneratedHtml] = useState<string | null>(null);
 
-  // Updates any top-level simple text fields (like fullName, title, email, aboutMe)
   const updateField = (field: keyof ResumeModel, value: any) => {
     setResume((prev) => ({
       ...prev,
@@ -28,7 +27,6 @@ export function useResumeForm() {
     }));
   };
 
-  // Adds a blank project item
   const addProject = () => {
     setResume((prev) => ({
       ...prev,
@@ -36,7 +34,6 @@ export function useResumeForm() {
     }));
   };
 
-  // Updates specific fields of a project based on its array index
   const updateProject = (index: number, field: keyof Project, value: any) => {
     setResume((prev) => {
       const updatedProjects = [...prev.projects];
@@ -51,7 +48,6 @@ export function useResumeForm() {
     });
   };
 
-  // Adds a blank experience item
   const addExperience = () => {
     setResume((prev) => ({
       ...prev,
@@ -59,7 +55,6 @@ export function useResumeForm() {
     }));
   };
 
-  // Updates specific fields of an experience item based on its array index
   const updateExperience = (index: number, field: keyof Experience, value: any) => {
     setResume((prev) => {
       const updatedExp = [...prev.experience];
@@ -74,7 +69,6 @@ export function useResumeForm() {
     });
   };
 
-  // Submits form data to your live Cloudflare AI Backend
   const generatePortfolio = async () => {
     setIsGenerating(true);
     setLiveUrl(null);
@@ -89,14 +83,13 @@ export function useResumeForm() {
       });
 
       if (!response.ok) {
-        // Cast as any to bypass the TypeScript 'unknown' check
-        const errorData = (await response.json().catch(() => ({}))) as any;
+        const errorData = await response.json().catch(() => ({})) as Record<string, any>;
         throw new Error(errorData.error || `Server responded with status ${response.status}`);
       }
 
-      // Cast as any to bypass the TypeScript 'unknown' check
-      const data = (await response.json()) as any;
+      const data = await response.json() as Record<string, any>;
       console.log("AI Optimized Output:", data.optimized);
+      
       setLiveUrl(`https://cloud-resume-optimzer.vercel.app/preview/${resume.fullName.toLowerCase().replace(/\s+/g, '-')}`);
     } catch (error: any) {
       console.error("CRITICAL ERROR:", error.message || error);
