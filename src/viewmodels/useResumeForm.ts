@@ -18,7 +18,7 @@ export function useResumeForm() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [liveUrl, setLiveUrl] = useState<string | null>(null);
-  const [generatedHtml, setGeneratedHtml] = useState<string | null>(null); // Added this missing line!
+  const [generatedHtml, setGeneratedHtml] = useState<string | null>(null);
 
   // Updates any top-level simple text fields (like fullName, title, email, aboutMe)
   const updateField = (field: keyof ResumeModel, value: any) => {
@@ -80,7 +80,6 @@ export function useResumeForm() {
     setLiveUrl(null);
     setGeneratedHtml(null);
     try {
-      // Calling your live Cloudflare Worker
       const response = await fetch("https://backend-api.221029.workers.dev", {
         method: "POST",
         headers: {
@@ -90,17 +89,17 @@ export function useResumeForm() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to optimize portfolio via AI backend.");
+        // Cast as any to bypass the TypeScript 'unknown' check
+        const errorData = (await response.json().catch(() => ({}))) as any;
+        throw new Error(errorData.error || `Server responded with status ${response.status}`);
       }
 
-      const data = await response.json();
-      
-      // The Cloudflare AI returns the optimized fields wrapped inside data.optimized
+      // Cast as any to bypass the TypeScript 'unknown' check
+      const data = (await response.json()) as any;
       console.log("AI Optimized Output:", data.optimized);
-      
       setLiveUrl(`https://cloud-resume-optimzer.vercel.app/preview/${resume.fullName.toLowerCase().replace(/\s+/g, '-')}`);
-    } catch (error) {
-      console.error("Error generating portfolio:", error);
+    } catch (error: any) {
+      console.error("CRITICAL ERROR:", error.message || error);
     } finally {
       setIsGenerating(false);
     }
