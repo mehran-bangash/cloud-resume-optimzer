@@ -4,7 +4,6 @@ export interface Env {
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    // 1. Enable CORS so your Vercel frontend can call this backend securely
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -17,7 +16,10 @@ export default {
     }
 
     if (request.method !== "POST") {
-      return Response.json({ error: "Only POST requests are allowed" }, { status: 405, headers: corsHeaders });
+      return new Response(
+        JSON.stringify({ error: "Only POST requests are allowed" }), 
+        { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     try {
@@ -26,7 +28,6 @@ export default {
       const rawProjects = data.projects || [];
       const rawExperience = data.experience || [];
 
-      // 2. Define our prompt to optimize the resume with AI
       const systemPrompt = `You are a Principal Tech Recruiter and resume optimization engine. 
       Your task is to take raw developer resume inputs and rewrite them into professional, high-impact, action-oriented text suitable for a stellar portfolio. 
       Ensure you use strong action verbs and highlight accomplishments.`;
@@ -44,21 +45,36 @@ export default {
       }
       Return ONLY valid JSON. No markdown backticks, no comments.`;
 
-      // 3. Call Cloudflare's free GPU infrastructure running Meta Llama-3-8b
-      const aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userQuery }
-        ]
-      });
+      let aiResponse;
+      try {
+        // Try Llama 3 first
+        aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userQuery }
+          ]
+        });
+      } catch (aiError) {
+        // Fallback to Llama 2 if Llama 3 is busy or rate-limited
+        aiResponse = await env.AI.run("@cf/meta/llama-2-7b-chat-int8", {
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userQuery }
+          ]
+        });
+      }
 
-      // 4. Return the AI optimized response back to Vercel
-      return new Response(JSON.stringify({ success: true, optimized: aiResponse.response }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      });
+      return new Response(
+        JSON.stringify({ success: true, optimized: aiResponse.response }), 
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
 
     } catch (error: any) {
-      return Response.json({ error: error.message }, { status: 500, headers: corsHeaders });
+      // Use standard new Response here to ensure the error always gets sent back cleanly
+      return new Response(
+        JSON.stringify({ error: error.message || "Unknown error occurred" }), 
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
   }
 };
