@@ -8,7 +8,7 @@ export interface Experience {
   role: string;
   company: string;
   duration: string;
-  description: string; // Will store high-impact bullet points
+  description: string;
 }
 
 export interface ResumeModel {
