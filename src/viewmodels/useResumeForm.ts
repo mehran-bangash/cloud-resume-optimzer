@@ -1,9 +1,9 @@
 "use client";
 
+
 import { useState } from "react";
 import { ResumeModel, Project, Experience } from "@/models/resume";
 
-// Premium pre-filled default data so your SaaS dashboard feels alive instantly on load
 const starterTemplate: ResumeModel = {
   fullName: "Mehran Ali",
   email: "mehran.ali@saasdev.io",
@@ -43,22 +43,13 @@ const starterTemplate: ResumeModel = {
 export type CVTemplate = "modern" | "minimalist" | "creative";
 
 export function useResumeForm() {
-  // Current raw form state edited by user
   const [resume, setResume] = useState<ResumeModel>(starterTemplate);
-  
-  // Job Description state for customized tailoring
   const [jobDescription, setJobDescription] = useState<string>("");
-  
-  // Storage for the AI-optimized resume payload
   const [optimizedResume, setOptimizedResume] = useState<ResumeModel | null>(starterTemplate);
-  
-  // Active CSS layout template selection
   const [selectedTemplate, setSelectedTemplate] = useState<CVTemplate>("modern");
-  
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Update simple profile text fields
   const updateField = (field: keyof ResumeModel, value: any) => {
     setResume((prev) => ({
       ...prev,
@@ -66,7 +57,6 @@ export function useResumeForm() {
     }));
   };
 
-  // Add blank project item
   const addProject = () => {
     setResume((prev) => ({
       ...prev,
@@ -74,7 +64,6 @@ export function useResumeForm() {
     }));
   };
 
-  // Update specific fields of a project based on array index
   const updateProject = (index: number, field: keyof Project, value: any) => {
     setResume((prev) => {
       const updatedProjects = [...prev.projects];
@@ -89,7 +78,6 @@ export function useResumeForm() {
     });
   };
 
-  // Add blank experience item
   const addExperience = () => {
     setResume((prev) => ({
       ...prev,
@@ -97,7 +85,6 @@ export function useResumeForm() {
     }));
   };
 
-  // Update specific fields of an experience item based on array index
   const updateExperience = (index: number, field: keyof Experience, value: any) => {
     setResume((prev) => {
       const updatedExp = [...prev.experience];
@@ -112,12 +99,10 @@ export function useResumeForm() {
     });
   };
 
-  // Dispatches current resume data to the live Cloudflare AI endpoint
   const optimizeResumeWithAI = async () => {
     setIsGenerating(true);
     setErrorMessage(null);
     try {
-      // Robust payload containing both raw resume and optional job description for tailored matchmaking
       const payload = {
         resume,
         jobDescription: jobDescription.trim() || undefined
@@ -132,19 +117,17 @@ export function useResumeForm() {
       });
 
       if (!response.ok) {
-        const errorDetails = await response.json().catch(() => ({}));
-        throw new Error(errorDetails.error || `Edge network status: ${response.status}`);
+        const errorDetails = (await response.json().catch(() => ({}))) as Record<string, any>;
+        throw new Error(errorDetails.details || errorDetails.error || `Edge network status: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as Record<string, any>;
       
-      // Parse the clean, sanitized JSON returned from the Cloudflare Worker AI Llama model
       if (data.success && data.optimized) {
         const parsedResume = typeof data.optimized === "string" 
           ? JSON.parse(data.optimized) 
           : data.optimized;
           
-        // Injecting fallback data for values not modified by AI (like contact details)
         const fullyCompiledResume: ResumeModel = {
           ...starterTemplate,
           ...parsedResume,
@@ -155,6 +138,10 @@ export function useResumeForm() {
         };
 
         setOptimizedResume(fullyCompiledResume);
+        
+        if (data.warning) {
+          console.warn("SaaS Fallback Warning:", data.warning);
+        }
       } else {
         throw new Error("Invalid response format returned by cloud edge engine.");
       }
