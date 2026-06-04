@@ -25,12 +25,13 @@ export interface ResumeModel {
 
 export interface RequestPayload {
   resume: ResumeModel;
-  jobDescription?: string; // Optional: triggers tailored resume optimization
+  jobDescription?: string;
 }
 
 export interface Env {
   AI: any;
 }
+
 
 /**
  * Utility to safely extract clean JSON strings from raw LLM outputs
