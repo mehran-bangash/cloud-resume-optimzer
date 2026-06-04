@@ -2,24 +2,23 @@ export interface Project {
   title: string;
   description: string;
   technologies: string[];
-  link?: string;
 }
 
 export interface Experience {
   role: string;
   company: string;
   duration: string;
-  description: string;
+  description: string; // Will store high-impact bullet points
 }
 
 export interface ResumeModel {
   fullName: string;
   email: string;
-  phone?: string;
-  location?: string;
-  title: string;      // e.g. "Full-Stack Engineer"
+  phone: string;
+  location: string;
+  title: string;
   aboutMe: string;
-  skills: string[];   // e.g. ["Next.js", "AWS", "TypeScript"]
+  skills: string[];
   projects: Project[];
   experience: Experience[];
 }
