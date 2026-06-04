@@ -1,41 +1,87 @@
-
-import { useState } from "react";
-import { useResumeForm } from "@/viewmodels/useResumeForm";
+"use client";
+import { useResumeForm, CVTemplate } from "@/viewmodels/useResumeForm";
+import CVPreview from "@/components/CVPreview";
 
 export default function Home() {
-  const { resume, jobDescription, optimizedResume, auditReport, isGenerating, setJobDescription, updateField, runBackendProcess } = useResumeForm();
-  const [tab, setTab] = useState<"draft" | "ai" | "audit">("draft");
+  const {
+    resume, isGenerating, isCheckingATS, atsMessage,
+    selectedTemplate, setSelectedTemplate,
+    setJobDescription, updateField, optimize, checkATS,
+  } = useResumeForm();
 
   return (
-    <main className="p-8 bg-slate-950 min-h-screen text-white grid grid-cols-2 gap-8">
-      {/* Left: Input Form */}
-      <div className="space-y-6">
-         <input placeholder="Full Name" value={resume.fullName} onChange={(e) => updateField("fullName", e.target.value)} className="w-full bg-slate-900 p-3 rounded border border-slate-700"/>
-         <textarea onChange={(e) => setJobDescription(e.target.value)} placeholder="Paste Job Description for AI Tailoring..." className="w-full bg-slate-900 p-3 rounded h-40 border border-slate-700"/>
-         
-         <div className="flex gap-2">
-            <button onClick={() => runBackendProcess("tailor")} disabled={isGenerating} className="bg-teal-500 p-4 rounded flex-1 font-bold">Tailor My CV</button>
-            <button onClick={() => runBackendProcess("audit")} disabled={isGenerating} className="bg-indigo-500 p-4 rounded flex-1 font-bold">Audit CV</button>
-         </div>
+    <main className="min-h-screen bg-slate-950 text-white">
+      <div className="border-b border-slate-800 px-8 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-white">AI Cloud Resume Optimizer</h1>
+          <p className="text-xs text-slate-500">2026 ATS-Ready Format · Powered by Cloudflare AI</p>
+        </div>
+        <div className="flex gap-2">
+          {(["modern", "minimalist", "creative"] as CVTemplate[]).map((t) => (
+            <button key={t} onClick={() => setSelectedTemplate(t)}
+              className={`text-xs px-3 py-1.5 rounded-lg capitalize font-medium transition-all ${
+                selectedTemplate === t ? "bg-teal-500 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+              }`}>
+              {t}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Right: Tabbed Comparison */}
-      <div className="bg-slate-900 p-6 rounded border border-slate-800">
-        <div className="flex gap-4 border-b border-slate-700 mb-4 pb-2">
-           <button onClick={() => setTab("draft")} className={tab === "draft" ? "text-teal-400 font-bold" : ""}>Personal Draft</button>
-           <button onClick={() => setTab("ai")} className={tab === "ai" ? "text-teal-400 font-bold" : ""}>AI Tailored CV</button>
-           <button onClick={() => setTab("audit")} className={tab === "audit" ? "text-teal-400 font-bold" : ""}>ATS Audit Report</button>
-        </div>
-        
-        <div className="mt-4">
-          {tab === "draft" && <h2 className="text-2xl">{resume.fullName || "Your Draft Name"}</h2>}
-          {tab === "ai" && optimizedResume && <h2 className="text-2xl">{optimizedResume.fullName} (Optimized)</h2>}
-          {tab === "audit" && auditReport && (
-            <div className="text-teal-400">
-               <h3 className="font-bold text-lg">Score: {auditReport.score}/100</h3>
-               <p>Flags: {auditReport.redFlags?.join(", ")}</p>
+      <div className="grid grid-cols-[340px_1fr] gap-0 min-h-[calc(100vh-65px)]">
+        {/* Left Panel */}
+        <div className="bg-slate-900 border-r border-slate-800 p-6 space-y-6 overflow-y-auto">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-300 mb-1">Job Description</h2>
+            <p className="text-xs text-slate-500 mb-3">Paste the job posting here, then click Optimize.</p>
+            <textarea onChange={(e) => setJobDescription(e.target.value)}
+              placeholder="Paste job description here..."
+              className="w-full bg-slate-800 border border-slate-700 focus:border-teal-500 text-slate-200 placeholder-slate-600 p-3 rounded-lg text-sm outline-none resize-none h-48 transition-all" />
+          </div>
+          <button onClick={optimize} disabled={isGenerating}
+            className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-all text-sm flex items-center justify-center gap-2">
+            {isGenerating ? (
+              <><span className="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full" />Optimizing with AI...</>
+            ) : "🚀 Analyze & Optimize CV"}
+          </button>
+          <div className="space-y-3">
+            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">How it works</p>
+              <ol className="text-xs text-slate-500 space-y-1 list-decimal list-inside">
+                <li>Edit your CV directly on the right</li>
+                <li>Paste a job description above</li>
+                <li>Click Optimize — AI rewrites your CV</li>
+                <li>Use ⚡ Check ATS Score anytime</li>
+              </ol>
             </div>
-          )}
+            <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">Current Score</p>
+              <div className="flex items-center gap-3">
+                <div className={`text-2xl font-bold ${(resume.atsScore ?? 82) >= 78 ? "text-green-400" : "text-amber-400"}`}>
+                  {resume.atsScore ?? 82}
+                </div>
+                <div className="flex-1">
+                  <div className="w-full h-2 bg-slate-700 rounded-full">
+                    <div className={`h-2 rounded-full transition-all ${(resume.atsScore ?? 82) >= 78 ? "bg-green-400" : "bg-amber-400"}`}
+                      style={{ width: `${resume.atsScore ?? 82}%` }} />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-1">{(resume.atsScore ?? 82) >= 78 ? "ATS Ready ✓" : "Needs improvement"}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Panel — CV Preview */}
+        <div className="overflow-y-auto bg-slate-950 p-8">
+          <CVPreview
+            resume={resume}
+            updateField={updateField}
+            onCheckATS={checkATS}
+            isCheckingATS={isCheckingATS}
+            atsMessage={atsMessage}
+            template={selectedTemplate}
+          />
         </div>
       </div>
     </main>
