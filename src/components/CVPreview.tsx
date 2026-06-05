@@ -19,7 +19,7 @@ export default function CVPreview({
   // ── Shared ATS bar (all templates) ──────────────────────────────
   const ATSBar = () => (
     <>
-      <div className={`flex items-center justify-between px-6 py-3 border-b-2 ${score >= 78 ? "border-green-600 bg-slate-900" : "border-amber-600 bg-slate-900"}`}>
+      <div data-ats-bar="true" className={`flex items-center justify-between px-6 py-3 border-b-2 ${score >= 78 ? "border-green-600 bg-slate-900" : "border-amber-600 bg-slate-900"}`}>
         <div className="flex items-center gap-3">
           <div className={`text-3xl font-bold ${score >= 78 ? "text-green-400" : "text-amber-400"}`}>{score}</div>
           <div>
@@ -35,7 +35,7 @@ export default function CVPreview({
         </button>
       </div>
       {atsMessage && (
-        <div className="bg-slate-800 text-sm text-teal-300 px-6 py-2 border-b border-slate-700">{atsMessage}</div>
+        <div data-ats-message="true" className="bg-slate-800 text-sm text-teal-300 px-6 py-2 border-b border-slate-700">{atsMessage}</div>
       )}
     </>
   );

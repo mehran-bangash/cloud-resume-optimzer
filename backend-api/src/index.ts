@@ -13,10 +13,8 @@ function jsonRes(data: unknown, status = 200) {
   });
 }
 
-// Tries harder to extract JSON — handles extra text, markdown fences, truncation
 function extractJson(text: string): any | null {
   try {
-    // Strip markdown code fences if present
     const stripped = text.replace(/```json|```/gi, "").trim();
     const start = stripped.indexOf("{");
     const end = stripped.lastIndexOf("}");
@@ -45,7 +43,6 @@ export default {
       const { resume } = body as { resume: any };
       if (!resume) return jsonRes({ error: "Missing resume" }, 400);
 
-      // Count real skills/experience to help AI score honestly
       const skillCount = Array.isArray(resume.skills) ? resume.skills.length : 0;
       const expCount = Array.isArray(resume.experience) ? resume.experience.length : 0;
       const aboutLength = typeof resume.aboutMe === "string" ? resume.aboutMe.length : 0;
@@ -102,24 +99,30 @@ If score >= 78, keep "improved" and "newScore" as null.`;
       return jsonRes({ error: "Missing resume or jobDescription" }, 400);
     }
 
-    const prompt = `You are an ATS Resume Optimization Engine.
+    const prompt = `You are an expert ATS Resume Optimizer.
 
-Task: Rewrite the resume to match the job description as closely as possible.
+TASK: Completely rewrite EVERY section of this resume to match the job description below.
+You MUST update ALL of these fields:
+- "title": rewrite to match the exact job title from JD
+- "aboutMe": rewrite completely using keywords from JD (mention Flutter, Dart, years of experience, specific skills from JD)
+- "skills": replace with skills DIRECTLY from JD requirements (Flutter, Dart, Provider, Riverpod, Bloc, GetX, Firebase, REST APIs, Git, MVVM, Clean Architecture, CI/CD etc.)
+- "experience": rewrite EVERY description to include Flutter/Dart work, mobile app responsibilities from JD
+- "projects": rewrite EVERY description to highlight Flutter/Dart/mobile relevance
+
+RULES:
+- Keep original fullName, email, phone, location, linkedin, github, company names, duration dates
+- DO NOT keep any description unchanged — rewrite ALL descriptions
+- Use action verbs: Developed, Built, Integrated, Optimized, Published, Collaborated
+- Include specific JD keywords in every section
 
 Job Description:
 ${jobDescription}
 
-Current Resume:
+Current Resume to rewrite:
 ${JSON.stringify(resume, null, 2)}
 
-Return ONLY this exact JSON structure — no markdown, no backticks, no text before or after:
-{"optimized":{<full rewritten resume object with same keys as input>},"atsScore":<integer 0-100>,"changes":"<one sentence summary of changes made>"}
-
-Rules for "optimized":
-- Keep all keys from the original resume (fullName, email, phone, location, linkedin, github, title, aboutMe, skills, experience, projects, education)
-- Rewrite title, aboutMe, skills, experience descriptions to match the job description keywords
-- Do NOT invent fake companies or dates — keep original company names and dates
-- skills array must contain relevant technologies from the job description`;
+Return ONLY this exact JSON — no markdown, no backticks, nothing before or after the JSON:
+{"optimized":{fullName,email,phone,location,linkedin,github,title,aboutMe,skills,experience,projects,education},"atsScore":<integer>,"changes":"<one sentence>"}`;
 
     try {
       const ai = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
