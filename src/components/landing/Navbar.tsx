@@ -33,18 +33,34 @@ export default function Navbar({ onGetStarted }: Props) {
   const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
+
+  
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handler);
     return () => window.removeEventListener("scroll", handler);
   }, []);
+ 
+    useEffect(() => {
+    return () => {
+      setSigningIn(false);
+    };
+  }, []);
 
-  const handleSignIn = async () => {
-    toast.loading("Redirecting to Google...");
+     const handleSignIn = async () => {
+  setSigningIn(true);
+  const toastId = toast.loading("Redirecting to Google...");
+  try {
     await signIn("google");
-  };
-
+    // If the page doesn't redirect immediately, keep it clean
+  } catch (error) {
+    setSigningIn(false);
+    toast.dismiss(toastId);
+    toast.error("Sign in failed. Please try again.");
+  }
+};
   const handleSignOut = async () => {
     const loadingToast = toast.loading("Signing out...");
     try {
