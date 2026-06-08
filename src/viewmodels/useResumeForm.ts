@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { ResumeModel } from "@/models/resume";
 
 export type CVTemplate = "modern" | "minimalist" | "creative";
@@ -12,41 +13,21 @@ const DEFAULT_RESUME: ResumeModel = {
   linkedin: "linkedin.com/in/alexmorgan",
   github: "github.com/alexmorgan",
   title: "Senior Full Stack Engineer",
-  aboutMe:
-    "Results-driven Full Stack Engineer with 5+ years building scalable cloud-native applications. Proven track record of reducing infrastructure costs by 40% and shipping products used by 500K+ users. Passionate about clean architecture, CI/CD, and developer experience.",
-  skills: [
-    "React", "Next.js", "TypeScript", "Node.js",
-    "Python", "AWS", "Docker", "PostgreSQL",
-    "GraphQL", "CI/CD", "Terraform", "Redis",
-  ],
+  aboutMe: "Results-driven Full Stack Engineer with 5+ years building scalable cloud-native applications.",
+  skills: ["React", "Next.js", "TypeScript", "Node.js"],
   experience: [
     {
       role: "Senior Software Engineer",
       company: "CloudScale Inc.",
       duration: "Jan 2022 – Present",
-      description:
-        "Led migration of monolithic app to microservices on AWS, reducing latency by 60%. Mentored 4 junior engineers and introduced automated testing achieving 92% code coverage.",
-    },
-    {
-      role: "Full Stack Developer",
-      company: "DevHub Solutions",
-      duration: "Mar 2019 – Dec 2021",
-      description:
-        "Built real-time collaboration features using WebSockets and React, increasing user engagement by 35%. Optimized PostgreSQL queries reducing load times by 50%.",
+      description: "Led migration to microservices.",
     },
   ],
   projects: [
     {
       title: "AI Resume Optimizer",
-      description:
-        "SaaS platform using Cloudflare Workers AI to parse and optimize resumes against job descriptions. 2K+ active users.",
-      technologies: ["Next.js", "Cloudflare Workers", "Llama 3.1", "TypeScript"],
-    },
-    {
-      title: "CloudMonitor Dashboard",
-      description:
-        "Real-time AWS cost monitoring dashboard with anomaly detection and Slack alerts.",
-      technologies: ["React", "AWS Lambda", "Python", "Terraform"],
+      description: "SaaS platform.",
+      technologies: ["Next.js", "TypeScript"],
     },
   ],
   education: [
@@ -60,12 +41,69 @@ const DEFAULT_RESUME: ResumeModel = {
 };
 
 export function useResumeForm() {
+  const { data: session } = useSession();
   const [resume, setResume] = useState<ResumeModel>(DEFAULT_RESUME);
   const [jobDescription, setJobDescription] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<CVTemplate>("modern");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCheckingATS, setIsCheckingATS] = useState(false);
   const [atsMessage, setAtsMessage] = useState<string | null>(null);
+
+  // Sync Google Session name and email with the default resume values if they haven't been edited
+  useEffect(() => {
+    if (
+      session?.user &&
+      resume.fullName === DEFAULT_RESUME.fullName &&
+      resume.email === DEFAULT_RESUME.email
+    ) {
+      setResume((prev) => ({
+        ...prev,
+        fullName: session.user?.name ?? prev.fullName,
+        email: session.user?.email ?? prev.email,
+      }));
+    }
+  }, [session, resume.fullName, resume.email]);
+
+  // Auto-load saved resume ONLY on first mount
+  useEffect(() => {
+    let cancelled = false;
+    const loadSavedResume = async () => {
+      try {
+        const res = await fetch("/api/resume/save");
+        if (!res.ok) return;
+        const data = await res.json() as any;
+        if (!cancelled && data.resume) {
+          setResume(data.resume as ResumeModel);
+        }
+      } catch (e) {
+        // Silent fail — just use default resume
+      }
+    };
+    loadSavedResume();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Auto-save with status events
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        const sessionRes = await fetch("/api/auth/session");
+        const sessionData = await sessionRes.json() as any;
+        if (!sessionData?.user?.email) return;
+
+        window.dispatchEvent(new Event("cv:saving"));
+        await fetch("/api/resume/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resumeData: resume }),
+        });
+        window.dispatchEvent(new Event("cv:saved"));
+      } catch (e) {
+        // silent fail
+      }
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [resume]);
 
   const updateField = (field: keyof ResumeModel, value: any) =>
     setResume((p) => ({ ...p, [field]: value }));
@@ -83,7 +121,7 @@ export function useResumeForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resume, jobDescription }),
       });
-      const data = (await res.json()) as any;
+      const data = await res.json() as any;
       if (data.error) {
         setAtsMessage(`❌ Backend error: ${data.error}`);
         return;
@@ -93,13 +131,9 @@ export function useResumeForm() {
           ...(data.optimized as ResumeModel),
           atsScore: data.atsScore ?? prev.atsScore,
         }));
-        setAtsMessage(
-          `✅ CV optimized! ATS Score: ${data.atsScore ?? "??"}/100. ${data.changes ?? ""}`
-        );
+        setAtsMessage(`✅ CV optimized! ATS Score: ${data.atsScore ?? "??"}/100. ${data.changes ?? ""}`);
       } else {
-        setAtsMessage(
-          `⚠️ Unexpected AI response: ${JSON.stringify(data).slice(0, 120)}`
-        );
+        setAtsMessage(`⚠️ Unexpected AI response: ${JSON.stringify(data).slice(0, 120)}`);
       }
     } catch (e: any) {
       setAtsMessage(`❌ Network error: ${e.message}`);
@@ -117,7 +151,7 @@ export function useResumeForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resume }),
       });
-      const data = (await res.json()) as any;
+      const data = await res.json() as any;
       if (data.error) {
         setAtsMessage(`❌ Backend error: ${data.error}`);
         return;
@@ -125,22 +159,13 @@ export function useResumeForm() {
       const score: number = typeof data.score === "number" ? data.score : 0;
       setResume((p) => ({ ...p, atsScore: score }));
       if (score >= 78) {
-        setAtsMessage(
-          `✅ ATS Score: ${score}/100 — ${data.feedback ?? "Already great!"}`
-        );
+        setAtsMessage(`✅ ATS Score: ${score}/100 — ${data.feedback ?? "Already great!"}`);
       } else {
         if (data.improved) {
-          setResume({
-            ...(data.improved as ResumeModel),
-            atsScore: data.newScore ?? score,
-          });
-          setAtsMessage(
-            `🔄 Score was ${score}/100. AI improved your CV to ${data.newScore ?? score}/100. ${data.feedback ?? ""}`
-          );
+          setResume({ ...(data.improved as ResumeModel), atsScore: data.newScore ?? score });
+          setAtsMessage(`🔄 Score was ${score}/100. AI improved your CV to ${data.newScore ?? score}/100.`);
         } else {
-          setAtsMessage(
-            `⚠️ ATS Score: ${score}/100. ${data.feedback ?? "Consider improving skills and summary."}`
-          );
+          setAtsMessage(`⚠️ ATS Score: ${score}/100. ${data.feedback ?? "Consider improving skills."}`);
         }
       }
     } catch (e: any) {
@@ -150,7 +175,6 @@ export function useResumeForm() {
     }
   };
 
-  // ✅ THIS WAS MISSING — return all values
   return {
     resume,
     jobDescription,
