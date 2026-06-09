@@ -43,6 +43,8 @@ function AppView({ onBack }: { onBack: () => void }) {
     selectedTemplate, setSelectedTemplate,
     setJobDescription, updateField, optimize, checkATS,
     keywordGap, isAnalyzingKeywords, jobDescription,
+    addKeyword,
+    addAllKeywords,
   } = useResumeForm();
 
   return (
@@ -61,6 +63,8 @@ function AppView({ onBack }: { onBack: () => void }) {
           hasJobDescription={jobDescription.trim().length > 0}
           onOptimize={optimize}
           onJobDescriptionChange={setJobDescription}
+          onAddKeyword={addKeyword}
+          onAddAllKeywords={addAllKeywords}
         />
         <div className="overflow-y-auto bg-slate-950 p-4 md:p-8">
           <div id="cv-preview-container">

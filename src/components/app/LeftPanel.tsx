@@ -11,6 +11,8 @@ interface Props {
   hasJobDescription: boolean;
   onOptimize: () => void;
   onJobDescriptionChange: (val: string) => void;
+  onAddKeyword: (keyword: string) => void;
+  onAddAllKeywords: (keywords: string[]) => void;
 }
 
 export default function LeftPanel({
@@ -21,6 +23,8 @@ export default function LeftPanel({
   hasJobDescription,
   onOptimize,
   onJobDescriptionChange,
+  onAddKeyword,
+  onAddAllKeywords,
 }: Props) {
   const score = atsScore ?? 82;
   const isReady = score >= 78;
@@ -64,10 +68,13 @@ export default function LeftPanel({
         <div className="border-t border-slate-800" />
 
         {/* ✅ Keyword Gap Analysis — Phase 2 Module 1 */}
+       
         <KeywordGap
           result={keywordGap}
           isLoading={isAnalyzingKeywords}
           hasJobDescription={hasJobDescription}
+          onAddKeyword={onAddKeyword}
+          onAddAllKeywords={onAddAllKeywords}
         />
 
         <div className="border-t border-slate-800" />

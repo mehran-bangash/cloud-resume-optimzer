@@ -112,6 +112,29 @@ export function useResumeForm() {
   const updateField = (field: keyof ResumeModel, value: any) =>
     setResume((p) => ({ ...p, [field]: value }));
 
+  // Add a single keyword to CV skills
+  const addKeyword = (keyword: string) => {
+    setResume((prev) => {
+      const exists = prev.skills.some(
+        (s) => s.toLowerCase() === keyword.toLowerCase()
+      );
+      if (exists) return prev;
+      return { ...prev, skills: [...prev.skills, keyword] };
+    });
+  };
+
+  // Add all missing keywords at once
+  const addAllKeywords = (keywords: string[]) => {
+    setResume((prev) => {
+      const existingLower = prev.skills.map((s) => s.toLowerCase());
+      const newSkills = keywords.filter(
+        (kw) => !existingLower.includes(kw.toLowerCase())
+      );
+      if (newSkills.length === 0) return prev;
+      return { ...prev, skills: [...prev.skills, ...newSkills] };
+    });
+  };
+
   const analyzeKeywords = async (jd: string, currentResume: ResumeModel) => {
     if (!jd.trim()) return;
     setIsAnalyzingKeywords(true);
@@ -226,5 +249,7 @@ export function useResumeForm() {
     checkATS,
     keywordGap,
     isAnalyzingKeywords,
+    addKeyword,
+    addAllKeywords,
   };
 }
