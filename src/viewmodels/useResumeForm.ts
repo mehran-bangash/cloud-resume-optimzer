@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { ResumeModel } from "@/models/resume";
-import { KeywordGapResult } from "@/lib/types";
+import { KeywordGapResult, CoverLetterResult } from "@/lib/types";
 
 export type CVTemplate = "modern" | "minimalist" | "creative";
 
@@ -52,6 +52,8 @@ export function useResumeForm() {
   const [keywordGap, setKeywordGap] = useState<KeywordGapResult | null>(null);
   const [isAnalyzingKeywords, setIsAnalyzingKeywords] = useState(false);
   const [isUploadingCV, setIsUploadingCV] = useState(false);
+  const [coverLetter, setCoverLetter] = useState<CoverLetterResult | null>(null);
+  const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false);
   const keywordDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync Google Session name and email with the default resume values if they haven't been edited
@@ -244,6 +246,36 @@ export function useResumeForm() {
     }
   };
 
+  const generateCoverLetter = async () => {
+    if (!jobDescription.trim()) {
+      setAtsMessage("⚠️ Please paste a job description first.");
+      return;
+    }
+    setIsGeneratingCoverLetter(true);
+    try {
+      const res = await fetch(
+        "https://backend-api.221029.workers.dev/cover-letter",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resume, jobDescription }),
+        }
+      );
+      const data = (await res.json()) as any;
+      if (data.error) {
+        setAtsMessage(`❌ Cover letter error: ${data.error}`);
+        return;
+      }
+      if (data.body) {
+        setCoverLetter(data as CoverLetterResult);
+      }
+    } catch (e: any) {
+      setAtsMessage(`❌ Network error: ${e.message}`);
+    } finally {
+      setIsGeneratingCoverLetter(false);
+    }
+  };
+
   const handleJobDescriptionChange = (value: string) => {
     setJobDescription(value);
     // Auto-analyze keywords 1.5s after user stops typing
@@ -254,7 +286,8 @@ export function useResumeForm() {
       }
     }, 1500);
   };
-return {
+  
+  return {
     resume,
     jobDescription,
     isGenerating,
@@ -274,5 +307,8 @@ return {
     isUploadingCV,
     setIsUploadingCV,
     handleParsedCV,
+    coverLetter,
+    isGeneratingCoverLetter,
+    generateCoverLetter,
   };
 }

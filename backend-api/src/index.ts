@@ -1,5 +1,6 @@
 export interface Env { AI: any; }
 import { handleParseCV } from "./endpoints/parse";
+import { handleCoverLetter } from "./endpoints/coverLetter";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -154,6 +155,11 @@ Rules:
       } catch (e: any) {
         return jsonRes({ error: "AI call failed: " + e.message }, 500);
       }
+    }
+
+    // ── /cover-letter route ───────────────────────────────────────
+    if (url.pathname === "/cover-letter") {
+      return handleCoverLetter(body, env);
     }
 
     // ── / default route — Optimize CV against JD ─────────────────

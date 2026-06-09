@@ -38,14 +38,16 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
 }
 
 function AppView({ onBack }: { onBack: () => void }) {
+   
   const {
-    resume, isGenerating, isCheckingATS, atsMessage,
-    selectedTemplate, setSelectedTemplate,
-    setJobDescription, updateField, optimize, checkATS,
-    keywordGap, isAnalyzingKeywords, jobDescription,
-    addKeyword, addAllKeywords,
-    isUploadingCV, setIsUploadingCV, handleParsedCV,
-  } = useResumeForm();
+  resume, isGenerating, isCheckingATS, atsMessage,
+  selectedTemplate, setSelectedTemplate,
+  setJobDescription, updateField, optimize, checkATS,
+  keywordGap, isAnalyzingKeywords, jobDescription,
+  addKeyword, addAllKeywords,
+  isUploadingCV, setIsUploadingCV, handleParsedCV,
+  coverLetter, isGeneratingCoverLetter, generateCoverLetter,
+} = useResumeForm();
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -55,20 +57,23 @@ function AppView({ onBack }: { onBack: () => void }) {
         setSelectedTemplate={setSelectedTemplate}
       />
       <div className="flex flex-col lg:grid lg:grid-cols-[300px_1fr] min-h-[calc(100vh-57px)]">
-        <LeftPanel
-          atsScore={resume.atsScore ?? 82}
-          isGenerating={isGenerating}
-          isAnalyzingKeywords={isAnalyzingKeywords}
-          keywordGap={keywordGap}
-          hasJobDescription={jobDescription.trim().length > 0}
-          onOptimize={optimize}
-          onJobDescriptionChange={setJobDescription}
-          onAddKeyword={addKeyword}
-          onAddAllKeywords={addAllKeywords}
-          isUploadingCV={isUploadingCV}
-          setIsUploadingCV={setIsUploadingCV}
-          onParsedCV={handleParsedCV}
-        />
+         <LeftPanel
+  atsScore={resume.atsScore ?? 82}
+  isGenerating={isGenerating}
+  isAnalyzingKeywords={isAnalyzingKeywords}
+  keywordGap={keywordGap}
+  hasJobDescription={jobDescription.trim().length > 0}
+  onOptimize={optimize}
+  onJobDescriptionChange={setJobDescription}
+  onAddKeyword={addKeyword}
+  onAddAllKeywords={addAllKeywords}
+  isUploadingCV={isUploadingCV}
+  setIsUploadingCV={setIsUploadingCV}
+  onParsedCV={handleParsedCV}
+  coverLetter={coverLetter}
+  isGeneratingCoverLetter={isGeneratingCoverLetter}
+  onGenerateCoverLetter={generateCoverLetter}
+/>
         <div className="overflow-y-auto bg-slate-950 p-4 md:p-8">
           <div id="cv-preview-container">
             <CVPreview

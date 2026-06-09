@@ -3,9 +3,10 @@ import { useState } from "react";
 import DownloadPDF from "@/components/DownloadPDF";
 import KeywordGap from "@/components/app/KeywordGap";
 import UploadCV from "@/components/app/UploadCV";
-import { KeywordGapResult } from "@/lib/types";
+import CoverLetter from "@/components/app/CoverLetter";
+import { KeywordGapResult, CoverLetterResult } from "@/lib/types";
 
-type Tab = "optimize" | "upload" | "keywords" | "score";
+type Tab = "optimize" | "upload" | "keywords" | "score" | "cover";
 
 interface Props {
   atsScore: number;
@@ -15,11 +16,14 @@ interface Props {
   setIsUploadingCV: (v: boolean) => void;
   keywordGap: KeywordGapResult | null;
   hasJobDescription: boolean;
+  coverLetter: CoverLetterResult | null;
+  isGeneratingCoverLetter: boolean;
   onOptimize: () => void;
   onJobDescriptionChange: (val: string) => void;
   onAddKeyword: (keyword: string) => void;
   onAddAllKeywords: (keywords: string[]) => void;
   onParsedCV: (data: any) => void;
+  onGenerateCoverLetter: () => void;
 }
 
 export default function LeftPanel({
@@ -30,11 +34,14 @@ export default function LeftPanel({
   setIsUploadingCV,
   keywordGap,
   hasJobDescription,
+  coverLetter,
+  isGeneratingCoverLetter,
   onOptimize,
   onJobDescriptionChange,
   onAddKeyword,
   onAddAllKeywords,
   onParsedCV,
+  onGenerateCoverLetter,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("optimize");
   const score = atsScore ?? 82;
@@ -46,6 +53,7 @@ export default function LeftPanel({
     { id: "keywords", label: "Keywords", icon: "◎",
       badge: keywordGap ? String(keywordGap.missingFromCV.length) : undefined },
     { id: "score",    label: "Score",    icon: String(score) },
+    { id: "cover",    label: "Letter",   icon: "✉" },
   ];
 
   return (
@@ -273,6 +281,19 @@ export default function LeftPanel({
               </div>
             </div>
 
+          </div>
+        )}
+
+        {/* ══ COVER LETTER TAB ════════════════════════════════════ */}
+        {activeTab === "cover" && (
+          <div className="p-4">
+            <CoverLetter
+              result={coverLetter}
+              isGenerating={isGeneratingCoverLetter}
+              hasJobDescription={hasJobDescription}
+              onGenerate={onGenerateCoverLetter}
+              onBack={() => setActiveTab("optimize")}
+            />
           </div>
         )}
 
