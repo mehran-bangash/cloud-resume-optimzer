@@ -74,12 +74,16 @@ export default function KeywordGap({
   const stillMissing = missingFromCV.filter((kw) => !addedKeywords.has(kw));
   const justAdded = missingFromCV.filter((kw) => addedKeywords.has(kw));
 
+  // ✅ Recalculate score dynamically as user adds keywords
+  const currentMatched = foundInCV.length + addedKeywords.size;
+  const currentScore = total > 0 ? Math.round((currentMatched / total) * 100) : matchScore;
+
   const scoreColor =
-    matchScore >= 75 ? "text-green-400" :
-    matchScore >= 50 ? "text-amber-400" : "text-red-400";
+    currentScore >= 75 ? "text-green-400" :
+    currentScore >= 50 ? "text-amber-400" : "text-red-400";
   const barColor =
-    matchScore >= 75 ? "bg-green-400" :
-    matchScore >= 50 ? "bg-amber-400" : "bg-red-400";
+    currentScore >= 75 ? "bg-green-400" :
+    currentScore >= 50 ? "bg-amber-400" : "bg-red-400";
 
   return (
     <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-4">
@@ -88,16 +92,16 @@ export default function KeywordGap({
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
             Keyword Match
           </p>
-          <span className={`text-sm font-bold ${scoreColor}`}>{matchScore}%</span>
+          <span className={`text-sm font-bold ${scoreColor}`}>{currentScore}%</span>
         </div>
         <div className="w-full h-1.5 bg-slate-700 rounded-full mb-1">
           <div
             className={`h-1.5 rounded-full transition-all duration-700 ${barColor}`}
-            style={{ width: `${matchScore}%` }}
+            style={{ width: `${currentScore}%` }}
           />
         </div>
         <p className="text-xs text-slate-500">
-          {foundInCV.length + addedKeywords.size} of {total} keywords matched
+          {currentMatched} of {total} keywords matched
         </p>
       </div>
 
