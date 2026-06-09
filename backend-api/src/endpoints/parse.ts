@@ -12,27 +12,6 @@ function extractJson(text: string): any | null {
   }
 }
 
-function base64ToText(base64: string): string {
-  try {
-    // Decode base64 to binary string
-    const binary = atob(base64);
-    // Extract readable ASCII text only
-    let text = "";
-    for (let i = 0; i < binary.length; i++) {
-      const code = binary.charCodeAt(i);
-      if (code >= 32 && code <= 126) {
-        text += binary[i];
-      } else if (code === 10 || code === 13 || code === 9) {
-        text += " ";
-      }
-    }
-    // Clean up excessive whitespace
-    return text.replace(/\s+/g, " ").trim();
-  } catch {
-    return "";
-  }
-}
-
 export async function handleParseCV(
   body: any,
   env: Env
@@ -43,73 +22,85 @@ export async function handleParseCV(
     "Access-Control-Allow-Headers": "Content-Type",
   };
 
-  const { fileBase64, fileName, cvText } = body as {
-    fileBase64?: string;
-    fileName?: string;
-    cvText?: string;
-  };
+  const { cvText } = body as { cvText: string };
 
-  let textToProcess = "";
-
-  if (fileBase64) {
-    textToProcess = base64ToText(fileBase64);
-  } else if (cvText) {
-    textToProcess = cvText;
-  }
-
-  if (!textToProcess || textToProcess.trim().length < 30) {
+  if (!cvText || cvText.trim().length < 30) {
     return new Response(
-      JSON.stringify({
-        error: "Could not extract readable text from this file. Please try a .txt or text-based PDF.",
-      }),
+      JSON.stringify({ error: "Could not extract readable text from file." }),
       { status: 400, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
 
-  const truncatedText = textToProcess.slice(0, 3000);
+  // Use up to 6000 chars to capture all projects and experience
+  const truncatedText = cvText.slice(0, 6000);
 
-  const prompt = `You are a CV parser. Extract structured data from this CV text.
+  const prompt = `You are a professional CV parser. Extract ALL data from this CV — do not skip any projects or experience entries.
 
 CV Text:
 ${truncatedText}
 
-Return ONLY this JSON — no markdown, no explanation:
+Return ONLY this exact JSON — no markdown, no backticks, no explanation before or after:
 {
-  "fullName": "<full name or empty string>",
-  "email": "<email or empty string>",
-  "phone": "<phone or empty string>",
-  "location": "<city, country or empty string>",
+  "fullName": "<full name>",
+  "email": "<email>",
+  "phone": "<phone>",
+  "location": "<city, country>",
   "linkedin": "<linkedin url or empty string>",
   "github": "<github url or empty string>",
-  "title": "<job title or empty string>",
-  "aboutMe": "<2-3 sentence summary or empty string>",
-  "skills": ["skill1", "skill2"],
-  "experience": [{"role": "", "company": "", "duration": "", "description": ""}],
-  "projects": [{"title": "", "description": "", "technologies": []}],
-  "education": [{"degree": "", "institution": "", "year": ""}]
+  "title": "<current or most recent job title>",
+  "aboutMe": "<professional summary 2-3 sentences, or create one from the CV data>",
+  "skills": ["skill1", "skill2", "skill3"],
+  "experience": [
+    {
+      "role": "<job title>",
+      "company": "<company name>",
+      "duration": "<start – end dates>",
+      "description": "<key responsibilities in 1-2 sentences>"
+    }
+  ],
+  "projects": [
+    {
+      "title": "<project name>",
+      "description": "<what it does and impact>",
+      "technologies": ["tech1", "tech2"]
+    }
+  ],
+  "education": [
+    {
+      "degree": "<degree name>",
+      "institution": "<university>",
+      "year": "<year>"
+    }
+  ]
 }
 
-Rules:
-- Only use data from the CV text — never invent data
-- If a field is not found use empty string or empty array
-- skills must be an array of strings`;
+IMPORTANT RULES:
+- Extract ALL projects — do not skip any
+- Extract ALL experience entries — do not skip any
+- If summary is missing, write one based on the CV content
+- Never invent companies, dates, or skills not in the CV
+- skills array should contain all technical skills mentioned`;
 
   try {
     const ai = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
       messages: [
         {
           role: "system",
-          content: "You are a CV parser. Output ONLY raw JSON. No markdown, no backticks.",
+          content:
+            "You are a CV parser. Output ONLY raw JSON. Extract ALL entries completely.",
         },
         { role: "user", content: prompt },
       ],
-      max_tokens: 2000,
+      max_tokens: 3000,
     });
 
     const result = extractJson(ai.response);
     if (!result) {
       return new Response(
-        JSON.stringify({ error: "AI could not parse this file format", raw: ai.response.slice(0, 100) }),
+        JSON.stringify({
+          error: "AI could not parse this file",
+          raw: ai.response.slice(0, 200),
+        }),
         { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
       );
     }

@@ -7,21 +7,77 @@ interface Props {
   setIsLoading: (v: boolean) => void;
 }
 
+async function extractTextFromFile(file: File): Promise<string> {
+  const ext = file.name.split(".").pop()?.toLowerCase();
+
+  // ── TXT ──────────────────────────────────────────────────────
+  if (ext === "txt") {
+    return await file.text();
+  }
+
+  // ── DOCX ─────────────────────────────────────────────────────
+  if (ext === "docx") {
+    const mammoth = (await import("mammoth")).default;
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  }
+
+  // ── PDF ───────────────────────────────────────────────────────
+  if (ext === "pdf") {
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item: any) => item.str)
+        .join(" ");
+      fullText += pageText + "\n";
+    }
+    return fullText;
+  }
+
+  // ── DOC (old Word) — fallback to binary text extraction ──────
+  if (ext === "doc") {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const binary = e.target?.result as string;
+        let text = "";
+        for (let i = 0; i < binary.length; i++) {
+          const code = binary.charCodeAt(i);
+          if (code >= 32 && code <= 126) text += binary[i];
+          else if (code === 10 || code === 13) text += "\n";
+        }
+        resolve(text.replace(/\s+/g, " ").trim());
+      };
+      reader.readAsBinaryString(file);
+    });
+  }
+
+  throw new Error("Unsupported file type. Please use PDF, DOCX, or TXT.");
+}
+
 export default function UploadCV({ onParsed, isLoading, setIsLoading }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = async (file: File) => {
     const validExtensions = /\.(pdf|doc|docx|txt)$/i;
     if (!validExtensions.test(file.name)) {
-      setError("Please upload a PDF, Word (.doc/.docx), or text (.txt) file.");
+      setError("Please upload a PDF, Word (.docx), or text (.txt) file.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("File too large. Maximum size is 5MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File too large. Maximum size is 10MB.");
       return;
     }
 
@@ -29,62 +85,56 @@ export default function UploadCV({ onParsed, isLoading, setIsLoading }: Props) {
     setSuccess(false);
     setFileName(file.name);
     setIsLoading(true);
+    setStatusMessage("Reading file...");
 
     try {
-      // Convert file to base64 and send to backend
-      const base64 = await fileToBase64(file);
-      
+      // Extract text based on file type
+      const text = await extractTextFromFile(file);
+
+      if (!text || text.trim().length < 30) {
+        setError(
+          "Could not extract text from this file. If it is a scanned PDF (image-based), please copy the text into a .txt file instead."
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      setStatusMessage("AI is parsing your CV...");
+
       const res = await fetch(
         "https://backend-api.221029.workers.dev/parse-cv",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fileName: file.name,
-            fileBase64: base64,
-            fileType: file.type,
-          }),
+          body: JSON.stringify({ cvText: text }),
         }
       );
 
-      const data = await res.json() as any;
+      const data = (await res.json()) as any;
 
       if (data.error) {
-        setError(`Could not parse CV: ${data.error}`);
+        setError(`Parse failed: ${data.error}`);
         return;
       }
 
       if (data.parsed) {
         setSuccess(true);
+        setStatusMessage("Done!");
         onParsed(data.parsed);
       } else {
-        setError("AI could not extract data from this file. Try a text-based PDF or .txt file.");
+        setError("AI could not extract structured data. Please try a .txt file.");
       }
     } catch (e: any) {
-      setError(`Upload failed: ${e.message}`);
+      setError(`Failed: ${e.message}`);
     } finally {
       setIsLoading(false);
+      setStatusMessage("");
     }
-  };
-
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        // Strip the data URL prefix — just send the base64 data
-        const base64 = result.split(",")[1];
-        resolve(base64);
-      };
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.readAsDataURL(file);
-    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) processFile(file);
-    // Reset input so same file can be re-uploaded
     e.target.value = "";
   };
 
@@ -102,7 +152,7 @@ export default function UploadCV({ onParsed, isLoading, setIsLoading }: Props) {
           Upload Your Existing CV
         </h2>
         <p className="text-xs text-slate-500">
-          AI will read your CV and auto-fill all fields instantly.
+          AI reads your CV and auto-fills all fields instantly.
         </p>
       </div>
 
@@ -134,11 +184,11 @@ export default function UploadCV({ onParsed, isLoading, setIsLoading }: Props) {
           <div className="flex flex-col items-center gap-3">
             <div className="relative w-12 h-12">
               <div className="w-12 h-12 border-2 border-slate-700 rounded-full" />
-              <div className="absolute inset-0 w-12 h-12 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
+              <div className="absolute inset-0 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
             </div>
             <div>
-              <p className="text-sm text-teal-400 font-medium">Parsing your CV...</p>
-              <p className="text-xs text-slate-500 mt-1">AI is reading your information</p>
+              <p className="text-sm text-teal-400 font-medium">{statusMessage}</p>
+              <p className="text-xs text-slate-500 mt-1">This may take a few seconds</p>
             </div>
           </div>
         ) : success ? (
@@ -147,7 +197,7 @@ export default function UploadCV({ onParsed, isLoading, setIsLoading }: Props) {
               <span className="text-green-400 text-2xl">✓</span>
             </div>
             <p className="text-sm text-green-400 font-medium">{fileName}</p>
-            <p className="text-xs text-slate-500">CV parsed successfully!</p>
+            <p className="text-xs text-slate-500">Parsed successfully</p>
             <p className="text-xs text-teal-400 mt-1">Click to upload a different file</p>
           </div>
         ) : (
@@ -164,33 +214,34 @@ export default function UploadCV({ onParsed, isLoading, setIsLoading }: Props) {
               </p>
             </div>
             <div className="flex gap-2 mt-1">
-              {["PDF", "DOC", "DOCX", "TXT"].map((ext) => (
-                <span key={ext} className="text-xs bg-slate-800 text-slate-500 px-2 py-0.5 rounded border border-slate-700">
+              {["PDF", "DOCX", "TXT"].map((ext) => (
+                <span
+                  key={ext}
+                  className="text-xs bg-slate-800 text-slate-500 px-2 py-0.5 rounded border border-slate-700"
+                >
                   {ext}
                 </span>
               ))}
             </div>
-            <p className="text-xs text-slate-600">Max 5MB</p>
+            <p className="text-xs text-slate-600">Max 10MB</p>
           </div>
         )}
       </div>
 
-      {/* Error */}
       {error && (
         <div className="bg-red-950/40 border border-red-800/50 rounded-lg px-3 py-2.5 flex items-start gap-2">
-          <span className="text-red-400 text-sm flex-shrink-0">⚠</span>
+          <span className="text-red-400 flex-shrink-0">⚠</span>
           <p className="text-xs text-red-400 leading-relaxed">{error}</p>
         </div>
       )}
 
-      {/* Info card */}
       <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4 space-y-2">
         <p className="text-xs text-slate-400 font-semibold">How it works</p>
         <div className="space-y-1.5">
           {[
-            "Upload your current CV in any format",
-            "AI extracts your name, skills, experience, education",
-            "All fields auto-fill in the editor",
+            "Upload PDF, DOCX, or TXT",
+            "AI extracts all your information",
+            "Fields auto-fill in the editor",
             "Edit anything, then optimize for a job",
           ].map((step, i) => (
             <div key={i} className="flex items-start gap-2">
@@ -201,10 +252,9 @@ export default function UploadCV({ onParsed, isLoading, setIsLoading }: Props) {
         </div>
       </div>
 
-      {/* Best results tip */}
       <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
-        <p className="text-xs text-amber-400/80">
-          💡 <span className="font-medium">Best results:</span> Use a text-based PDF or .txt file. Scanned image PDFs may not parse correctly.
+        <p className="text-xs text-amber-400/80 leading-relaxed">
+          💡 <span className="font-medium">Note:</span> Scanned/image PDFs cannot be parsed. Use a digitally created PDF or export your CV as .txt for best results.
         </p>
       </div>
     </div>
