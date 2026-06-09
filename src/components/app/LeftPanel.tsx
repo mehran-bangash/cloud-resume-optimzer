@@ -68,14 +68,13 @@ export default function LeftPanel({
         <div className="border-t border-slate-800" />
 
         {/* ✅ Keyword Gap Analysis — Phase 2 Module 1 */}
-       
-        <KeywordGap
-          result={keywordGap}
-          isLoading={isAnalyzingKeywords}
-          hasJobDescription={hasJobDescription}
-          onAddKeyword={onAddKeyword}
-          onAddAllKeywords={onAddAllKeywords}
-        />
+       <KeywordGap
+  result={keywordGap}
+  isLoading={isAnalyzingKeywords}
+  hasJobDescription={hasJobDescription}
+  onAddKeyword={onAddKeyword}
+  onAddAllKeywords={onAddAllKeywords}
+/>
 
         <div className="border-t border-slate-800" />
 
