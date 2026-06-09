@@ -148,7 +148,7 @@ export function useResumeForm() {
       github:     parsed.github     || prev.github,
       title:      parsed.title      || prev.title,
       aboutMe:    parsed.aboutMe    || prev.aboutMe,
-      skills:     parsed.skills?.length     ? parsed.skills     : prev.skills,
+      skills:     parsed.skills?.length       ? parsed.skills     : prev.skills,
       experience: parsed.experience?.length ? parsed.experience : prev.experience,
       projects:   parsed.projects?.length   ? parsed.projects   : prev.projects,
       education:  parsed.education?.length  ? parsed.education  : prev.education,
@@ -254,8 +254,7 @@ export function useResumeForm() {
       }
     }, 1500);
   };
-
-  return {
+return {
     resume,
     jobDescription,
     isGenerating,

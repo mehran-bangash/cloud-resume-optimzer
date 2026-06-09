@@ -43,8 +43,8 @@ function AppView({ onBack }: { onBack: () => void }) {
     selectedTemplate, setSelectedTemplate,
     setJobDescription, updateField, optimize, checkATS,
     keywordGap, isAnalyzingKeywords, jobDescription,
-    addKeyword,
-    addAllKeywords,
+    addKeyword, addAllKeywords,
+    isUploadingCV, setIsUploadingCV, handleParsedCV,
   } = useResumeForm();
 
   return (
@@ -65,6 +65,9 @@ function AppView({ onBack }: { onBack: () => void }) {
           onJobDescriptionChange={setJobDescription}
           onAddKeyword={addKeyword}
           onAddAllKeywords={addAllKeywords}
+          isUploadingCV={isUploadingCV}
+          setIsUploadingCV={setIsUploadingCV}
+          onParsedCV={handleParsedCV}
         />
         <div className="overflow-y-auto bg-slate-950 p-4 md:p-8">
           <div id="cv-preview-container">
