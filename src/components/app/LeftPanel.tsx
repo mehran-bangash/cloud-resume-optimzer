@@ -1,6 +1,6 @@
 "use client";
 import DownloadPDF from "@/components/DownloadPDF";
-import KeywordGap from "@/components/app/KeywordGap";
+import KeywordGap from "@/components/app/KeywordGap"; 
 import { KeywordGapResult } from "@/lib/types";
 
 interface Props {
