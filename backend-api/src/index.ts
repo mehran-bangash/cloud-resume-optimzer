@@ -93,6 +93,63 @@ If score >= 78, keep "improved" and "newScore" as null.`;
       }
     }
 
+    // ── /keyword-gap route ────────────────────────────────────────
+    if (url.pathname === "/keyword-gap") {
+      const { resume, jobDescription } = body as {
+        resume: any;
+        jobDescription: string;
+      };
+      if (!resume || !jobDescription) {
+        return jsonRes({ error: "Missing resume or jobDescription" }, 400);
+      }
+
+      const prompt = `You are a keyword extraction and matching engine for ATS resume analysis.
+
+Extract ALL important keywords from the job description — skills, tools, technologies, methodologies, soft skills.
+Then check which of those keywords exist in the resume text.
+
+Job Description:
+${jobDescription}
+
+Resume:
+${JSON.stringify(resume)}
+
+Return ONLY this exact JSON — no markdown, no backticks, nothing else:
+{
+  "jdKeywords": ["keyword1", "keyword2"],
+  "foundInCV": ["keyword1"],
+  "missingFromCV": ["keyword2"],
+  "matchScore": <integer 0-100>
+}
+
+Rules:
+- jdKeywords: ALL important keywords from the JD (10-25 keywords)
+- foundInCV: keywords from jdKeywords that appear in the resume
+- missingFromCV: keywords from jdKeywords NOT in the resume
+- matchScore: percentage of jdKeywords found in CV`;
+
+      try {
+        const ai = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+          messages: [
+            {
+              role: "system",
+              content: "You are a keyword extraction engine. Output ONLY raw JSON. No markdown, no explanation.",
+            },
+            { role: "user", content: prompt },
+          ],
+          max_tokens: 1000,
+        });
+
+        const result = extractJson(ai.response);
+        if (!result) {
+          return jsonRes({ error: "AI returned unparseable response", raw: ai.response.slice(0, 200) }, 500);
+        }
+        return jsonRes(result);
+      } catch (e: any) {
+        return jsonRes({ error: "AI call failed: " + e.message }, 500);
+      }
+    }
+
     // ── / default route — Optimize CV against JD ─────────────────
     const { resume, jobDescription } = body as { resume: any; jobDescription: string };
     if (!resume || !jobDescription) {

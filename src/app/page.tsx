@@ -42,6 +42,7 @@ function AppView({ onBack }: { onBack: () => void }) {
     resume, isGenerating, isCheckingATS, atsMessage,
     selectedTemplate, setSelectedTemplate,
     setJobDescription, updateField, optimize, checkATS,
+    keywordGap, isAnalyzingKeywords, jobDescription,
   } = useResumeForm();
 
   return (
@@ -55,6 +56,9 @@ function AppView({ onBack }: { onBack: () => void }) {
         <LeftPanel
           atsScore={resume.atsScore ?? 82}
           isGenerating={isGenerating}
+          isAnalyzingKeywords={isAnalyzingKeywords}
+          keywordGap={keywordGap}
+          hasJobDescription={jobDescription.trim().length > 0}
           onOptimize={optimize}
           onJobDescriptionChange={setJobDescription}
         />

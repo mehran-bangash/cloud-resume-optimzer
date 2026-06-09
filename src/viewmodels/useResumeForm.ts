@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { ResumeModel } from "@/models/resume";
+import { KeywordGapResult } from "@/lib/types";
 
 export type CVTemplate = "modern" | "minimalist" | "creative";
 
@@ -48,6 +49,9 @@ export function useResumeForm() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCheckingATS, setIsCheckingATS] = useState(false);
   const [atsMessage, setAtsMessage] = useState<string | null>(null);
+  const [keywordGap, setKeywordGap] = useState<KeywordGapResult | null>(null);
+  const [isAnalyzingKeywords, setIsAnalyzingKeywords] = useState(false);
+  const keywordDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync Google Session name and email with the default resume values if they haven't been edited
   useEffect(() => {
@@ -108,6 +112,26 @@ export function useResumeForm() {
   const updateField = (field: keyof ResumeModel, value: any) =>
     setResume((p) => ({ ...p, [field]: value }));
 
+  const analyzeKeywords = async (jd: string, currentResume: ResumeModel) => {
+    if (!jd.trim()) return;
+    setIsAnalyzingKeywords(true);
+    try {
+      const res = await fetch("https://backend-api.221029.workers.dev/keyword-gap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resume: currentResume, jobDescription: jd }),
+      });
+      const data = await res.json() as any;
+      if (!data.error) {
+        setKeywordGap(data as KeywordGapResult);
+      }
+    } catch (e) {
+      console.error("Keyword gap error:", e);
+    } finally {
+      setIsAnalyzingKeywords(false);
+    }
+  };
+
   const optimize = async () => {
     if (!jobDescription.trim()) {
       setAtsMessage("⚠️ Please paste a job description first.");
@@ -132,6 +156,7 @@ export function useResumeForm() {
           atsScore: data.atsScore ?? prev.atsScore,
         }));
         setAtsMessage(`✅ CV optimized! ATS Score: ${data.atsScore ?? "??"}/100. ${data.changes ?? ""}`);
+        await analyzeKeywords(jobDescription, data.optimized as ResumeModel);
       } else {
         setAtsMessage(`⚠️ Unexpected AI response: ${JSON.stringify(data).slice(0, 120)}`);
       }
@@ -175,6 +200,17 @@ export function useResumeForm() {
     }
   };
 
+  const handleJobDescriptionChange = (value: string) => {
+    setJobDescription(value);
+    // Auto-analyze keywords 1.5s after user stops typing
+    if (keywordDebounceRef.current) clearTimeout(keywordDebounceRef.current);
+    keywordDebounceRef.current = setTimeout(() => {
+      if (value.trim().length > 50) {
+        analyzeKeywords(value, resume);
+      }
+    }, 1500);
+  };
+
   return {
     resume,
     jobDescription,
@@ -184,9 +220,11 @@ export function useResumeForm() {
     setAtsMessage,
     selectedTemplate,
     setSelectedTemplate,
-    setJobDescription,
+    setJobDescription: handleJobDescriptionChange,
     updateField,
     optimize,
     checkATS,
+    keywordGap,
+    isAnalyzingKeywords,
   };
 }

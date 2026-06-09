@@ -1,9 +1,14 @@
 "use client";
 import DownloadPDF from "@/components/DownloadPDF";
+import KeywordGap from "@/components/app/keywordGap";
+import { KeywordGapResult } from "@/lib/types";
 
 interface Props {
   atsScore: number;
   isGenerating: boolean;
+  isAnalyzingKeywords: boolean;
+  keywordGap: KeywordGapResult | null;
+  hasJobDescription: boolean;
   onOptimize: () => void;
   onJobDescriptionChange: (val: string) => void;
 }
@@ -11,6 +16,9 @@ interface Props {
 export default function LeftPanel({
   atsScore,
   isGenerating,
+  isAnalyzingKeywords,
+  keywordGap,
+  hasJobDescription,
   onOptimize,
   onJobDescriptionChange,
 }: Props) {
@@ -40,7 +48,7 @@ export default function LeftPanel({
         <button
           onClick={onOptimize}
           disabled={isGenerating}
-          className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-all text-sm flex items-center justify-center gap-2"
+          className="w-full bg-teal-500 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-all text-sm flex items-center justify-center gap-2 shadow-lg shadow-teal-500/10"
         >
           {isGenerating ? (
             <>
@@ -53,10 +61,19 @@ export default function LeftPanel({
         {/* Download button */}
         <DownloadPDF targetId="cv-preview-container" />
 
-        <div className="border-t border-slate-800 pt-3" />
+        <div className="border-t border-slate-800" />
+
+        {/* ✅ Keyword Gap Analysis — Phase 2 Module 1 */}
+        <KeywordGap
+          result={keywordGap}
+          isLoading={isAnalyzingKeywords}
+          hasJobDescription={hasJobDescription}
+        />
+
+        <div className="border-t border-slate-800" />
 
         {/* ATS Score */}
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-3">
             Current ATS Score
           </p>
@@ -79,15 +96,15 @@ export default function LeftPanel({
         </div>
 
         {/* How it works */}
-        <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+        <div className="bg-slate-800 rounded-xl p-4 border border-slate-700">
           <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">
             How it works
           </p>
           <ol className="text-xs text-slate-500 space-y-1.5 list-decimal list-inside">
             <li>Edit your CV directly on the right</li>
             <li>Paste a job description above</li>
-            <li>Click Optimize — AI rewrites your CV</li>
-            <li>Use ⚡ Check ATS Score anytime</li>
+            <li>See keyword gaps instantly</li>
+            <li>Click Optimize — AI fills missing keywords</li>
             <li>Download as PDF when ready</li>
           </ol>
         </div>
