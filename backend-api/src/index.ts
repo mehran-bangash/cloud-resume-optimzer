@@ -1,4 +1,5 @@
 export interface Env { AI: any; }
+import { handleParseCV } from "./endpoints/parse";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -36,6 +37,11 @@ export default {
       body = await request.json();
     } catch {
       return jsonRes({ error: "Invalid JSON body" }, 400);
+    }
+
+    // ── /parse-cv route ───────────────────────────────────────────
+    if (url.pathname === "/parse-cv") {
+      return handleParseCV(body, env);
     }
 
     // ── /ats-check route ──────────────────────────────────────────

@@ -51,6 +51,7 @@ export function useResumeForm() {
   const [atsMessage, setAtsMessage] = useState<string | null>(null);
   const [keywordGap, setKeywordGap] = useState<KeywordGapResult | null>(null);
   const [isAnalyzingKeywords, setIsAnalyzingKeywords] = useState(false);
+  const [isUploadingCV, setIsUploadingCV] = useState(false);
   const keywordDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Sync Google Session name and email with the default resume values if they haven't been edited
@@ -133,6 +134,26 @@ export function useResumeForm() {
       if (newSkills.length === 0) return prev;
       return { ...prev, skills: [...prev.skills, ...newSkills] };
     });
+  };
+
+  const handleParsedCV = (parsed: any) => {
+    // Merge parsed data with defaults for any missing fields
+    setResume((prev) => ({
+      ...prev,
+      fullName:   parsed.fullName   || prev.fullName,
+      email:      parsed.email      || prev.email,
+      phone:      parsed.phone      || prev.phone,
+      location:   parsed.location   || prev.location,
+      linkedin:   parsed.linkedin   || prev.linkedin,
+      github:     parsed.github     || prev.github,
+      title:      parsed.title      || prev.title,
+      aboutMe:    parsed.aboutMe    || prev.aboutMe,
+      skills:     parsed.skills?.length     ? parsed.skills     : prev.skills,
+      experience: parsed.experience?.length ? parsed.experience : prev.experience,
+      projects:   parsed.projects?.length   ? parsed.projects   : prev.projects,
+      education:  parsed.education?.length  ? parsed.education  : prev.education,
+    }));
+    setAtsMessage("✅ CV uploaded and parsed! Review your details and optimize.");
   };
 
   const analyzeKeywords = async (jd: string, currentResume: ResumeModel) => {
@@ -251,5 +272,8 @@ export function useResumeForm() {
     isAnalyzingKeywords,
     addKeyword,
     addAllKeywords,
+    isUploadingCV,
+    setIsUploadingCV,
+    handleParsedCV,
   };
 }
