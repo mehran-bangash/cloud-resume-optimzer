@@ -4,9 +4,12 @@ import DownloadPDF from "@/components/DownloadPDF";
 import KeywordGap from "@/components/app/KeywordGap";
 import UploadCV from "@/components/app/UploadCV";
 import CoverLetter from "@/components/app/CoverLetter";
+import LinkedInImport from "@/components/app/LinkedInImport";
+import CVVersions from "@/components/app/CVVersions";
 import { KeywordGapResult, CoverLetterResult } from "@/lib/types";
+import { ResumeModel } from "@/models/resume";
 
-type Tab = "optimize" | "upload" | "keywords" | "score" | "cover";
+type Tab = "optimize" | "upload" | "linkedin" | "keywords" | "score" | "cover" | "versions";
 
 interface Props {
   atsScore: number;
@@ -18,12 +21,15 @@ interface Props {
   hasJobDescription: boolean;
   coverLetter: CoverLetterResult | null;
   isGeneratingCoverLetter: boolean;
+  currentResume: ResumeModel;
+  isLoggedIn: boolean;
   onOptimize: () => void;
   onJobDescriptionChange: (val: string) => void;
   onAddKeyword: (keyword: string) => void;
   onAddAllKeywords: (keywords: string[]) => void;
   onParsedCV: (data: any) => void;
   onGenerateCoverLetter: () => void;
+  onLoadVersion: (resume: ResumeModel) => void;
 }
 
 export default function LeftPanel({
@@ -36,12 +42,15 @@ export default function LeftPanel({
   hasJobDescription,
   coverLetter,
   isGeneratingCoverLetter,
+  currentResume,
+  isLoggedIn,
   onOptimize,
   onJobDescriptionChange,
   onAddKeyword,
   onAddAllKeywords,
   onParsedCV,
   onGenerateCoverLetter,
+  onLoadVersion,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("optimize");
   const score = atsScore ?? 82;
@@ -50,10 +59,12 @@ export default function LeftPanel({
   const tabs: { id: Tab; label: string; icon: string; badge?: string }[] = [
     { id: "optimize", label: "Optimize", icon: "⚡" },
     { id: "upload",   label: "Upload",   icon: "↑" },
+    { id: "linkedin", label: "LinkedIn", icon: "in" },
     { id: "keywords", label: "Keywords", icon: "◎",
       badge: keywordGap ? String(keywordGap.missingFromCV.length) : undefined },
     { id: "score",    label: "Score",    icon: String(score) },
     { id: "cover",    label: "Letter",   icon: "✉" },
+    { id: "versions", label: "Versions", icon: "⊞" },
   ];
 
   return (
@@ -68,9 +79,15 @@ export default function LeftPanel({
               onClick={() => setActiveTab(tab.id)}
               className={`relative flex-1 flex flex-col items-center justify-center py-2.5 text-xs font-medium transition-all border-r border-slate-800 last:border-r-0 ${
                 activeTab === tab.id
-                  ? "bg-teal-500/10 text-teal-400"
+                  ? tab.id === "linkedin"
+                    ? "text-white"
+                    : "bg-teal-500/10 text-teal-400"
                   : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
               }`}
+              style={activeTab === tab.id && tab.id === "linkedin"
+                ? { background: "#0A66C215", color: "#0A66C2" }
+                : {}
+              }
             >
               {/* Active indicator line */}
               {activeTab === tab.id && (
@@ -82,12 +99,12 @@ export default function LeftPanel({
                   {parseInt(tab.badge) > 9 ? "9+" : tab.badge}
                 </span>
               )}
-              <span className={`text-base leading-none mb-0.5 ${
-                tab.id === "score"
-                  ? isReady ? "text-green-400 font-bold text-xs" : "text-amber-400 font-bold text-xs"
-                  : ""
-              }`}>
-                {tab.icon}
+              <span className={`text-base leading-none mb-0.5`}>
+                {tab.id === "linkedin" ? (
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                ) : tab.icon}
               </span>
               <span className="text-[10px] tracking-wide hidden sm:block">{tab.label}</span>
             </button>
@@ -173,6 +190,20 @@ export default function LeftPanel({
         {activeTab === "upload" && (
           <div className="p-4">
             <UploadCV
+              onParsed={(data) => {
+                onParsedCV(data);
+                setActiveTab("optimize");
+              }}
+              isLoading={isUploadingCV}
+              setIsLoading={setIsUploadingCV}
+            />
+          </div>
+        )}
+
+        {/* ══ LINKEDIN TAB ════════════════════════════════════════ */}
+        {activeTab === "linkedin" && (
+          <div className="p-4">
+            <LinkedInImport
               onParsed={(data) => {
                 onParsedCV(data);
                 setActiveTab("optimize");
@@ -293,6 +324,17 @@ export default function LeftPanel({
               hasJobDescription={hasJobDescription}
               onGenerate={onGenerateCoverLetter}
               onBack={() => setActiveTab("optimize")}
+            />
+          </div>
+        )}
+
+        {/* ══ VERSIONS TAB ════════════════════════════════════════ */}
+        {activeTab === "versions" && (
+          <div className="p-4">
+            <CVVersions
+              currentResume={currentResume}
+              onLoad={onLoadVersion}
+              isLoggedIn={isLoggedIn}
             />
           </div>
         )}

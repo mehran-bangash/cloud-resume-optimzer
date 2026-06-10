@@ -38,16 +38,18 @@ function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
 }
 
 function AppView({ onBack }: { onBack: () => void }) {
-   
+  const { data: session } = useSession();
+  
   const {
-  resume, isGenerating, isCheckingATS, atsMessage,
-  selectedTemplate, setSelectedTemplate,
-  setJobDescription, updateField, optimize, checkATS,
-  keywordGap, isAnalyzingKeywords, jobDescription,
-  addKeyword, addAllKeywords,
-  isUploadingCV, setIsUploadingCV, handleParsedCV,
-  coverLetter, isGeneratingCoverLetter, generateCoverLetter,
-} = useResumeForm();
+    resume, isGenerating, isCheckingATS, atsMessage,
+    selectedTemplate, setSelectedTemplate,
+    setJobDescription, updateField, optimize, checkATS,
+    keywordGap, isAnalyzingKeywords, jobDescription,
+    addKeyword, addAllKeywords,
+    isUploadingCV, setIsUploadingCV, handleParsedCV,
+    coverLetter, isGeneratingCoverLetter, generateCoverLetter,
+    loadVersion,
+  } = useResumeForm();
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -57,23 +59,26 @@ function AppView({ onBack }: { onBack: () => void }) {
         setSelectedTemplate={setSelectedTemplate}
       />
       <div className="flex flex-col lg:grid lg:grid-cols-[300px_1fr] min-h-[calc(100vh-57px)]">
-         <LeftPanel
-  atsScore={resume.atsScore ?? 82}
-  isGenerating={isGenerating}
-  isAnalyzingKeywords={isAnalyzingKeywords}
-  keywordGap={keywordGap}
-  hasJobDescription={jobDescription.trim().length > 0}
-  onOptimize={optimize}
-  onJobDescriptionChange={setJobDescription}
-  onAddKeyword={addKeyword}
-  onAddAllKeywords={addAllKeywords}
-  isUploadingCV={isUploadingCV}
-  setIsUploadingCV={setIsUploadingCV}
-  onParsedCV={handleParsedCV}
-  coverLetter={coverLetter}
-  isGeneratingCoverLetter={isGeneratingCoverLetter}
-  onGenerateCoverLetter={generateCoverLetter}
-/>
+        <LeftPanel
+          atsScore={resume.atsScore ?? 82}
+          isGenerating={isGenerating}
+          isAnalyzingKeywords={isAnalyzingKeywords}
+          keywordGap={keywordGap}
+          hasJobDescription={jobDescription.trim().length > 0}
+          onOptimize={optimize}
+          onJobDescriptionChange={setJobDescription}
+          onAddKeyword={addKeyword}
+          onAddAllKeywords={addAllKeywords}
+          isUploadingCV={isUploadingCV}
+          setIsUploadingCV={setIsUploadingCV}
+          onParsedCV={handleParsedCV}
+          coverLetter={coverLetter}
+          isGeneratingCoverLetter={isGeneratingCoverLetter}
+          onGenerateCoverLetter={generateCoverLetter}
+          currentResume={resume}
+          isLoggedIn={!!session}
+          onLoadVersion={loadVersion}
+        />
         <div className="overflow-y-auto bg-slate-950 p-4 md:p-8">
           <div id="cv-preview-container">
             <CVPreview

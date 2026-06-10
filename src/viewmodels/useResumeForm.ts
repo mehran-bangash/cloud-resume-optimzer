@@ -55,6 +55,10 @@ export function useResumeForm() {
   const [coverLetter, setCoverLetter] = useState<CoverLetterResult | null>(null);
   const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false);
   const keywordDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const loadVersion = (versionData: ResumeModel) => {
+  setResume(versionData);
+  setAtsMessage("✅ CV version loaded successfully.");
+};
 
   // Sync Google Session name and email with the default resume values if they haven't been edited
   useEffect(() => {
@@ -307,6 +311,7 @@ export function useResumeForm() {
     isUploadingCV,
     setIsUploadingCV,
     handleParsedCV,
+    loadVersion,
     coverLetter,
     isGeneratingCoverLetter,
     generateCoverLetter,

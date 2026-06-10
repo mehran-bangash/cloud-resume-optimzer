@@ -41,6 +41,13 @@ const FEATURES = [
     badge: "Print-perfect",
     isNew: false,
   },
+  {
+  icon: "🔗",
+  title: "LinkedIn Import",
+  desc: "Export your LinkedIn profile as PDF and upload it. AI reads your entire work history, skills, and education and fills all CV fields in seconds.",
+  badge: "New in Phase 2",
+  isNew: true,
+},
 ];
 
 export default function Features() {
