@@ -58,7 +58,7 @@ function AppView({ onBack }: { onBack: () => void }) {
         selectedTemplate={selectedTemplate}
         setSelectedTemplate={setSelectedTemplate}
       />
-      <div className="flex flex-col lg:grid lg:grid-cols-[300px_1fr] min-h-[calc(100vh-57px)]">
+      <div className="flex flex-col lg:grid lg:grid-cols-[344px_1fr] min-h-[calc(100vh-57px)]">
         <LeftPanel
           atsScore={resume.atsScore ?? 82}
           isGenerating={isGenerating}
