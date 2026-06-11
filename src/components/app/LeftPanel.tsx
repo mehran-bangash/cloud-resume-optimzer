@@ -45,13 +45,13 @@ const NAV_ITEMS: {
   icon: string;
   color?: string;
 }[] = [
-  { id: "optimize",  label: "Optimize",     icon: "ti-bolt",           color: "#14B8A6" },
-  { id: "upload",    label: "Upload CV",    icon: "ti-upload",         color: "#38BDF8" },
-  { id: "linkedin",  label: "LinkedIn",     icon: "ti-brand-linkedin", color: "#0A66C2" },
-  { id: "keywords",  label: "Keywords",     icon: "ti-tags",           color: "#F59E0B" },
-  { id: "cover",     label: "Cover Letter", icon: "ti-mail",           color: "#EC4899" },
-  { id: "versions",  label: "CV Versions",  icon: "ti-versions",       color: "#8B5CF6" },
-  { id: "score",     label: "ATS Score",    icon: "ti-chart-bar",      color: "#10B981" },
+  { id: "optimize",  label: "Optimize",    icon: "⚡" },
+  { id: "upload",    label: "Upload CV",   icon: "↑"  },
+  { id: "linkedin",  label: "LinkedIn",    icon: "in", color: "#0A66C2" },
+  { id: "keywords",  label: "Keywords",    icon: "◎"  },
+  { id: "cover",     label: "Cover Letter",icon: "✉"  },
+  { id: "versions",  label: "Versions",    icon: "⊞"  },
+  { id: "score",     label: "ATS Score",   icon: "📊" },
 ];
 
 export default function LeftPanel({
@@ -89,7 +89,7 @@ export default function LeftPanel({
               : {}
             }
           >
-            <i className={`ti ${item.icon} text-sm`} aria-hidden="true" />
+            <span style={{ fontSize: "14px" }}>{item.icon}</span>
             {item.label}
             {item.id === "keywords" && missingCount > 0 && (
               <span className="w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
@@ -172,7 +172,7 @@ export default function LeftPanel({
                 onMouseEnter={(e) => {
                   if (active !== item.id) {
                     (e.currentTarget as HTMLButtonElement).style.background = "#1e293b60";
-                    (e.currentTarget as HTMLButtonElement).style.color = item.color ?? "#94a3b8";
+                    (e.currentTarget as HTMLButtonElement).style.color = "#94a3b8";
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -189,7 +189,9 @@ export default function LeftPanel({
                     style={{ background: item.color ?? "#14B8A6" }}
                   />
                 )}
-                <i className={`ti ${item.icon} text-xl`} style={{ color: active === item.id ? (item.color ?? "#14B8A6") : undefined }} aria-hidden="true" />
+                <span style={{ fontSize: "18px", lineHeight: 1, marginBottom: "2px" }}>
+                  {item.icon}
+                </span>
                 {/* Badge */}
                 {item.id === "keywords" && missingCount > 0 && (
                   <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
@@ -220,11 +222,9 @@ export default function LeftPanel({
         <div style={{ width: "288px", background: "#0f172a", overflowY: "auto", flexShrink: 0 }}>
           {/* Panel header */}
           <div style={{ padding: "12px 16px", borderBottom: "1px solid #1e293b", display: "flex", alignItems: "center", gap: "8px", position: "sticky", top: 0, background: "#0f172a", zIndex: 10 }}>
-            <i
-              className={`ti ${NAV_ITEMS.find(n => n.id === active)?.icon} text-base`}
-              style={{ color: NAV_ITEMS.find(n => n.id === active)?.color ?? "#14B8A6" }}
-              aria-hidden="true"
-            />
+            <span style={{ fontSize: "14px" }}>
+              {NAV_ITEMS.find(n => n.id === active)?.icon}
+            </span>
             <p className="text-xs font-semibold text-slate-300">
               {NAV_ITEMS.find(n => n.id === active)?.label}
             </p>
@@ -320,20 +320,20 @@ function PanelContent({
         {isGenerating ? (
           <><span className="animate-spin w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />Optimizing...</>
         ) : (
-          <><i className="ti ti-rocket text-base" aria-hidden="true" />Analyze & Optimize CV</>
+          <><span className="text-base">🚀</span> Analyze & Optimize CV</>
         )}
       </button>
       <DownloadPDF targetId="cv-preview-container" />
       <div className="border-t border-slate-800 pt-3 space-y-2">
         <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Quick guide</p>
         {[
-          { icon: "ti-upload",         text: "Upload your CV first",           color: "#38BDF8" },
-          { icon: "ti-brand-linkedin", text: "Or import from LinkedIn",         color: "#0A66C2" },
-          { icon: "ti-bolt",           text: "Paste JD and click Optimize",     color: "#14B8A6" },
-          { icon: "ti-tags",           text: "Add missing keywords manually",   color: "#F59E0B" },
+          { icon: "↑",  text: "Upload your CV first" },
+          { icon: "in", text: "Or import from LinkedIn" },
+          { icon: "⚡", text: "Paste JD and click Optimize" },
+          { icon: "◎",  text: "Add missing keywords manually" },
         ].map((tip) => (
           <div key={tip.icon} className="flex items-center gap-2.5">
-            <i className={`ti ${tip.icon} text-sm`} style={{ color: tip.color }} aria-hidden="true" />
+            <span className="text-sm text-slate-600">{tip.icon}</span>
             <p className="text-xs text-slate-500">{tip.text}</p>
           </div>
         ))}
