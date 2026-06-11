@@ -143,24 +143,44 @@ export default function LeftPanel({
       )}
 
       {/* ── Desktop layout ────────────────────────────────── */}
-      <aside className="hidden lg:flex h-[calc(100vh-57px)] sticky top-0 border-r border-slate-800">
+      <aside style={{ display: "flex", height: "calc(100vh - 57px)", position: "sticky", top: 0, borderRight: "1px solid #1e293b" }} className="hidden lg:flex">
 
         {/* Icon rail */}
-        <div className="w-14 bg-slate-950 border-r border-slate-800 flex flex-col items-center py-3 gap-1">
+        <div style={{ width: "56px", background: "#020617", borderRight: "1px solid #1e293b", display: "flex", flexDirection: "column", alignItems: "center", padding: "12px 4px", gap: "4px", flexShrink: 0 }}>
           {NAV_ITEMS.map((item) => (
             <div key={item.id} className="relative group w-full px-1">
               <button
                 onClick={() => setActive(item.id)}
                 aria-label={item.label}
-                className={`w-full flex flex-col items-center justify-center py-2.5 rounded-lg transition-all relative ${
-                  active === item.id
-                    ? "bg-slate-800 text-teal-400"
-                    : "text-slate-600 hover:text-slate-300 hover:bg-slate-800/60"
-                }`}
-                style={active === item.id && item.color
-                  ? { color: item.color }
-                  : {}
-                }
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "10px 0",
+                  borderRadius: "8px",
+                  transition: "all 0.15s",
+                  background: active === item.id ? "#1e293b" : "transparent",
+                  color: active === item.id
+                    ? (item.color ?? "#14B8A6")
+                    : "#475569",
+                  cursor: "pointer",
+                  border: "none",
+                  position: "relative" as const,
+                }}
+                onMouseEnter={(e) => {
+                  if (active !== item.id) {
+                    (e.currentTarget as HTMLButtonElement).style.background = "#1e293b60";
+                    (e.currentTarget as HTMLButtonElement).style.color = "#94a3b8";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (active !== item.id) {
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                    (e.currentTarget as HTMLButtonElement).style.color = "#475569";
+                  }
+                }}
               >
                 {/* Active indicator */}
                 {active === item.id && (
@@ -197,9 +217,9 @@ export default function LeftPanel({
         </div>
 
         {/* Content panel */}
-        <div className="w-72 bg-slate-900 overflow-y-auto">
+        <div style={{ width: "288px", background: "#0f172a", overflowY: "auto", flexShrink: 0 }}>
           {/* Panel header */}
-          <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-2 sticky top-0 bg-slate-900 z-10">
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #1e293b", display: "flex", alignItems: "center", gap: "8px", position: "sticky", top: 0, background: "#0f172a", zIndex: 10 }}>
             <i
               className={`ti ${NAV_ITEMS.find(n => n.id === active)?.icon} text-base`}
               style={{ color: NAV_ITEMS.find(n => n.id === active)?.color ?? "#14B8A6" }}
