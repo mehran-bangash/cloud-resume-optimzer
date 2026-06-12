@@ -78,6 +78,8 @@ function AppView({ onBack }: { onBack: () => void }) {
           currentResume={resume}
           isLoggedIn={!!session}
           onLoadVersion={loadVersion}
+          shareResume={resume}
+          shareTemplate={selectedTemplate}
         />
         <div className="overflow-y-auto bg-slate-950 p-4 md:p-8">
           <div id="cv-preview-container">

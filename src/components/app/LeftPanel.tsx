@@ -6,6 +6,7 @@ import UploadCV from "@/components/app/UploadCV";
 import LinkedInImport from "@/components/app/LinkedInImport";
 import CoverLetter from "@/components/app/CoverLetter";
 import CVVersions from "@/components/app/CVVersions";
+import ShareCV from "@/components/app/ShareCV";
 import { KeywordGapResult, CoverLetterResult } from "@/lib/types";
 import { ResumeModel } from "@/models/resume";
 
@@ -16,7 +17,8 @@ type Panel =
   | "keywords"
   | "score"
   | "cover"
-  | "versions";
+  | "versions"
+  | "share";
 
 interface Props {
   atsScore: number;
@@ -37,6 +39,8 @@ interface Props {
   onParsedCV: (data: any) => void;
   onGenerateCoverLetter: () => void;
   onLoadVersion: (resume: ResumeModel) => void;
+  shareResume: ResumeModel;
+  shareTemplate: any;
 }
 
 const NAV_ITEMS: {
@@ -52,6 +56,7 @@ const NAV_ITEMS: {
   { id: "cover",     label: "Cover Letter",icon: "✉"  },
   { id: "versions",  label: "Versions",    icon: "⊞"  },
   { id: "score",     label: "ATS Score",   icon: "📊" },
+  { id: "share",     label: "Share CV",    icon: "⬆" },
 ];
 
 export default function LeftPanel({
@@ -63,6 +68,7 @@ export default function LeftPanel({
   onOptimize, onJobDescriptionChange,
   onAddKeyword, onAddAllKeywords,
   onParsedCV, onGenerateCoverLetter, onLoadVersion,
+  shareResume, shareTemplate,
 }: Props) {
   const [active, setActive] = useState<Panel>("optimize");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -137,6 +143,8 @@ export default function LeftPanel({
               onParsedCV={onParsedCV}
               onGenerateCoverLetter={onGenerateCoverLetter}
               onLoadVersion={onLoadVersion}
+              shareResume={shareResume}
+              shareTemplate={shareTemplate}
             />
           </div>
         </div>
@@ -254,6 +262,8 @@ export default function LeftPanel({
               onParsedCV={onParsedCV}
               onGenerateCoverLetter={onGenerateCoverLetter}
               onLoadVersion={onLoadVersion}
+              shareResume={shareResume}
+              shareTemplate={shareTemplate}
             />
           </div>
         </div>
@@ -286,6 +296,8 @@ interface PanelContentProps {
   onParsedCV: (data: any) => void;
   onGenerateCoverLetter: () => void;
   onLoadVersion: (resume: ResumeModel) => void;
+  shareResume: ResumeModel;
+  shareTemplate: any;
 }
 
 function PanelContent({
@@ -298,6 +310,7 @@ function PanelContent({
   onOptimize, onJobDescriptionChange,
   onAddKeyword, onAddAllKeywords,
   onParsedCV, onGenerateCoverLetter, onLoadVersion,
+  shareResume, shareTemplate,
 }: PanelContentProps) {
 
   if (active === "optimize") return (
@@ -444,6 +457,14 @@ function PanelContent({
         </div>
       </div>
     </div>
+  );
+
+  if (active === "share") return (
+    <ShareCV
+      resume={shareResume}
+      template={shareTemplate}
+      isLoggedIn={isLoggedIn}
+    />
   );
 
   return null;
