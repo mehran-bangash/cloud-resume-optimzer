@@ -1,4 +1,4 @@
-﻿
+
 
 import { supabaseAdmin } from "@/lib/supabase";
 import { notFound } from "next/navigation";
