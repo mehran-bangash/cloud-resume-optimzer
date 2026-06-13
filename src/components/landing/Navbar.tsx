@@ -28,6 +28,7 @@ const NAV_LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#testimonials", label: "Reviews" },
   { href: "/tracker", label: "Job Tracker" },
+  { href: "/pricing", label: "Pricing" },
 ];
 
 export default function Navbar({ onGetStarted }: Props) {
