@@ -1,3 +1,4 @@
+
 import { supabaseAdmin } from "@/lib/supabase";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
